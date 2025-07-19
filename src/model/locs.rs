@@ -203,6 +203,18 @@ impl<'a, R: bam::Read> FilteredReader<'a, R> {
         self.found_alns.clear();
         let mut primary = true;
         loop {
+            // Skip unmapped supplementary alignments
+            if self.record.is_unmapped() {
+                if self.reader.read(&mut self.record).transpose()?.is_none() {
+                    self.has_more = false;
+                    break;
+                }
+                if is_primary(&self.record) {
+                    break;
+                }
+                continue;
+            }
+            
             let mut cigar = Cigar::from_raw(self.record.raw_cigar());
             if primary {
                 assert!(!cigar.has_hard_clipping(), "Primary alignment has hard clipping");

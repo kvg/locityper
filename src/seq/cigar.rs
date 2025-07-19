@@ -222,11 +222,17 @@ impl Cigar {
 
     /// Returns true if the record has Hard clipping. Must not be empty.
     pub fn has_hard_clipping(&self) -> bool {
+        if self.tuples.is_empty() {
+            return false;
+        }
         self.tuples[0].op == Operation::Hard || self.tuples.last().unwrap().op == Operation::Hard
     }
 
     /// Replace hard clipping with soft.
     pub fn hard_to_soft(&mut self) {
+        if self.tuples.is_empty() {
+            return;
+        }
         let first = &mut self.tuples[0];
         if first.op == Operation::Hard {
             first.op = Operation::Soft;
