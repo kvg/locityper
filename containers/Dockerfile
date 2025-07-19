@@ -1,4 +1,4 @@
-FROM rust:1.76-slim-bookworm
+FROM rust:1.85-slim-bookworm
 
 LABEL org.opencontainers.image.authors="timofey.prodanov@hhu.de"
 LABEL version="0.19.1"
@@ -38,7 +38,7 @@ RUN curl -L https://github.com/ksahlin/strobealign/archive/refs/tags/v${STROBE_V
     cp build/strobealign ${PREFIX}/bin
 
 WORKDIR /repos
-RUN git clone https://github.com/tprodanov/locityper && \
+RUN git clone -b kvg_max_genotypes https://github.com/kvg/locityper && \
     git clone https://github.com/smarco/WFA2-lib locityper/WFA2 && \
     cargo install --no-track --verbose --root "${PREFIX}" --path locityper
 
