@@ -437,6 +437,8 @@ pub enum GenotypingWarning {
     TooManyReads(u32),
     /// Even the best genotype has very low quality.
     NoProbableGenotype,
+    /// Too many genotypes to consider (number of genotypes).
+    TooManyGenotypes(usize),
 }
 
 impl fmt::Display for GenotypingWarning {
@@ -446,6 +448,7 @@ impl fmt::Display for GenotypingWarning {
             Self::FewReads(count) => write!(f, "FewReads({})", count),
             Self::TooManyReads(count) => write!(f, "TooManyReads({})", count),
             Self::NoProbableGenotype => write!(f, "NoProbableGenotype"),
+            Self::TooManyGenotypes(count) => write!(f, "TooManyGenotypes({})", count),
         }
     }
 }

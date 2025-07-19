@@ -93,6 +93,7 @@ struct Args {
 
     assgn_params: AssgnParams,
     scheme_params: SchemeParams,
+    max_genotypes: Option<usize>,
 }
 
 impl Default for Args {
@@ -125,6 +126,7 @@ impl Default for Args {
 
             assgn_params: Default::default(),
             scheme_params: Default::default(),
+            max_genotypes: None,
         }
     }
 }
@@ -293,6 +295,9 @@ fn print_help(extended: bool) {
         println!("    {:KEY$} {:VAL$}  Minimum number of genotypes after each step [{}].",
             "    --min-gts".green(), "INT".yellow(),
             super::fmt_def(PrettyUsize(defaults.assgn_params.min_gts)));
+        println!("    {:KEY$} {:VAL$}  Maximum number of genotypes to consider [{}].\n\
+            {EMPTY}  Skip loci with more genotypes and print a warning.",
+            "    --max-gts".green(), "INT".yellow(), super::fmt_def("unlimited"));
         println!("    {:KEY$} {:VAL$}  Number of attempts per step [{}].",
             "    --attempts".green(), "INT".yellow(), super::fmt_def(defaults.assgn_params.attempts));
         println!("    {:KEY$} {:VAL$}  Randomly move read coordinates by at most {} bp [{}].",
@@ -438,6 +443,7 @@ fn parse_args(argv: &[String]) -> crate::Result<Args> {
             Long("highs") => args.scheme_params.highs_params.push(parser.value()?.parse()?),
             Long("gurobi") => args.scheme_params.gurobi_params.push(parser.value()?.parse()?),
             Short('O') | Long("out-bams") => args.assgn_params.out_bams = parser.value()?.parse::<PrettyUsize>()?.get(),
+            Long("max-gts") | Long("max-genotypes") => args.max_genotypes = Some(parser.value()?.parse()?),
 
             Short('^') | Long("interleaved") => args.in_files.interleaved = true,
             Long("no-index") => args.in_files.no_index = true,
@@ -1005,6 +1011,24 @@ fn analyze_locus(
         let (genotypes, priors) = generate_genotypes(&contig_ids, contigs, opt_priors, usize::from(args.ploidy))?;
         if genotypes.is_empty() {
             return Err(error!(RuntimeError, "No available genotypes for locus {}", locus.set.tag()));
+        }
+        
+        // Check if the number of genotypes exceeds the maximum limit
+        if let Some(max_gts) = args.max_genotypes {
+            if genotypes.len() > max_gts {
+                log::warn!("[{}] Skipping locus: {} genotypes exceed maximum limit of {}", 
+                    locus.set.tag(), genotypes.len(), max_gts);
+                let genotyping = scheme::Genotyping::empty_result(
+                    locus.set.tag().to_string(), 
+                    vec![scheme::GenotypingWarning::TooManyGenotypes(genotypes.len())]
+                );
+                let res_filename = locus.out_dir.join(paths::RES_JSON);
+                let mut res_writer = ext::sys::create_gzip(&res_filename)?;
+                genotyping.to_json().write_pretty(&mut res_writer, 4).map_err(add_path!(res_filename))?;
+                super::write_success_file(locus.out_dir.join(paths::SUCCESS))?;
+                log::info!("    [{}] Successfully finished in {}", locus.set.tag(), ext::fmt::Duration(timer.elapsed()));
+                return Ok(());
+            }
         }
 
         let dist_filename = locus.db_locus_dir.join(paths::DISTANCES);
