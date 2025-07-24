@@ -1,4 +1,4 @@
-FROM rust:1.85-slim-bookworm
+FROM rust:1.76-slim-bookworm
 
 LABEL org.opencontainers.image.authors="timofey.prodanov@hhu.de"
 LABEL version="0.19.1"
@@ -11,7 +11,7 @@ ARG STROBE_VER=0.13.0
 
 RUN apt-get update && \
     apt-get install --assume-yes --no-install-recommends  \
-        curl clang libclang-dev libncurses-dev zlib1g-dev \
+        curl clang libclang-dev libncurses-dev zlib1g-dev parallel \
         bzip2 libbz2-dev liblzma-dev make cmake git g++ jellyfish
 
 WORKDIR /repos
