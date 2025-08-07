@@ -38,7 +38,8 @@ RUN curl -L https://github.com/ksahlin/strobealign/archive/refs/tags/v${STROBE_V
     cp build/strobealign ${PREFIX}/bin
 
 WORKDIR /repos
-RUN git clone -b kvg_build_docker_locally https://github.com/kvg/locityper && \
+#RUN git clone -b kvg_build_docker_locally https://github.com/kvg/locityper && \
+RUN git clone -b dev https://github.com/tprodanov/locityper.git && \
     git clone https://github.com/smarco/WFA2-lib locityper/WFA2 && \
     cargo install --no-track --verbose --root "${PREFIX}" --path locityper
 
